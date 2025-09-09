@@ -1,0 +1,2581 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABSEN DIGITAL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .tab-active.tab-data {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: white;
+        }
+        
+        .tab-active.tab-absen {
+            background: linear-gradient(135deg, #eab308, #ca8a04);
+            color: white;
+        }
+        
+        .tab-active.tab-riwayat {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+        
+        .tab-active.tab-rekap {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .tab-active.tab-cetak {
+            background: linear-gradient(135deg, #a855f7, #9333ea);
+            color: white;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+        }
+        
+        .modal {
+            backdrop-filter: blur(8px);
+        }
+        
+        .attendance-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .attendance-btn.selected {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .holiday-notice {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            animation: pulse 2s infinite;
+        }
+        
+        .sunday-notice {
+            background: linear-gradient(135deg, #10b981, #059669);
+            animation: bounce 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+            40%, 43% { transform: translateY(-10px); }
+            70% { transform: translateY(-5px); }
+            90% { transform: translateY(-2px); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-sky-50 to-blue-100 min-h-screen">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-sky-500 to-blue-600 text-white p-6 shadow-lg">
+        <h1 class="text-3xl font-bold text-center mb-2">ABSEN DIGITAL</h1>
+        <div class="flex items-center justify-center gap-2">
+            <p class="text-sky-100 text-sm">AUTOSAVE AKTIF</p>
+            <div id="autosaveIndicator" class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+        </div>
+    </div>
+
+    <!-- School Information -->
+    <div class="bg-white mx-4 mt-4 p-4 rounded-xl shadow-md">
+        <div class="grid grid-cols-1 gap-3">
+            <div class="flex justify-between items-center">
+                <span class="font-medium text-gray-700">🏫 NAMA SEKOLAH:</span>
+                <input type="text" id="schoolName" class="border rounded px-2 py-1 text-sm w-40" placeholder="Isi nama sekolah" oninput="saveAllData()">
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="font-medium text-gray-700">📚 KELAS:</span>
+                <input type="text" id="className" class="border rounded px-2 py-1 text-sm w-40" placeholder="Isi kelas" oninput="saveAllData()">
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="font-medium text-gray-700">👨‍🏫 WALI KELAS:</span>
+                <input type="text" id="teacherName" class="border rounded px-2 py-1 text-sm w-40" placeholder="Isi nama wali kelas" oninput="saveAllData()">
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="font-medium text-gray-700">👥 JUMLAH SISWA:</span>
+                <span id="studentCount" class="font-bold text-sky-600">0 👦 L: 0 / 👧 P: 0</span>
+            </div>
+        </div>
+        <hr class="my-3 border-gray-200">
+        <div class="flex justify-between text-sm text-gray-600">
+            <span id="currentDay">SENIN</span>
+            <span>|</span>
+            <span id="currentDate">01/01/2025</span>
+            <span>|</span>
+            <span id="currentTime">00:00</span>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="mx-4 mt-4">
+        <div class="flex bg-white rounded-xl p-1 shadow-md overflow-x-auto">
+            <button onclick="showTab('data')" id="tab-data" class="tab-btn flex-1 py-2 px-3 rounded-lg text-xs font-medium whitespace-nowrap tab-active tab-data">DATA SISWA</button>
+            <button onclick="showTab('absen')" id="tab-absen" class="tab-btn flex-1 py-2 px-3 rounded-lg text-xs font-medium whitespace-nowrap tab-absen">ABSEN</button>
+            <button onclick="showTab('riwayat')" id="tab-riwayat" class="tab-btn flex-1 py-2 px-3 rounded-lg text-xs font-medium whitespace-nowrap tab-riwayat">RIWAYAT</button>
+            <button onclick="showTab('rekap')" id="tab-rekap" class="tab-btn flex-1 py-2 px-3 rounded-lg text-xs font-medium whitespace-nowrap tab-rekap">REKAP</button>
+            <button onclick="showTab('cetak')" id="tab-cetak" class="tab-btn flex-1 py-2 px-3 rounded-lg text-xs font-medium whitespace-nowrap tab-cetak">CETAK/KIRIM</button>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="mx-4 mt-4 mb-6">
+        <!-- DATA SISWA TAB -->
+        <div id="content-data" class="tab-content">
+            <div class="bg-white rounded-xl p-4 shadow-md">
+                <button onclick="showAddStudentModal()" class="w-full btn-primary text-white py-3 rounded-lg font-medium mb-4 hover:shadow-lg transition-all">
+                    + TAMBAH SISWA
+                </button>
+                <div id="studentList" class="space-y-2">
+                    <p class="text-gray-500 text-center py-8">BELUM ADA DATA SISWA</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABSEN TAB -->
+        <div id="content-absen" class="tab-content hidden">
+            <div class="bg-white rounded-xl p-4 shadow-md">
+                <h3 class="text-lg font-bold text-center mb-4 text-gray-800">ABSEN HARIAN</h3>
+                
+                <!-- Date Picker -->
+                <div class="mb-4 flex justify-center">
+                    <input type="date" id="attendanceDate" class="border rounded-lg px-3 py-2 text-sm" onchange="updateAttendanceDate()">
+                </div>
+
+                <!-- Holiday/Sunday Notice -->
+                <div id="holidayNotice" class="hidden mb-4 p-4 rounded-lg text-center text-white font-medium">
+                    <div id="holidayText"></div>
+                </div>
+
+                <!-- Attendance Controls -->
+                <div id="attendanceControls" class="mb-4">
+                    <button onclick="markAllPresent()" class="w-full bg-green-500 text-white py-2 rounded-lg font-medium mb-2 hover:bg-green-600 transition-colors">
+                        HADIR SEMUA
+                    </button>
+                    <button onclick="toggleHoliday()" id="holidayBtn" class="w-full bg-yellow-500 text-white py-2 rounded-lg font-medium mb-4 hover:bg-yellow-600 transition-colors">
+                        TANDAI LIBUR
+                    </button>
+                </div>
+
+                <!-- Attendance Table -->
+                <div id="attendanceTable" class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="bg-sky-100">
+                                <th class="p-2 text-left">NO</th>
+                                <th class="p-2 text-left">NAMA SISWA</th>
+                                <th class="p-2 text-center">ABSEN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Save Controls -->
+                <div class="mt-4 flex gap-2">
+                    <button onclick="saveAttendance()" id="saveBtn" class="flex-1 btn-primary text-white py-2 rounded-lg font-medium">
+                        SIMPAN ABSEN
+                    </button>
+                    <button onclick="editAttendance()" id="editBtn" class="flex-1 bg-gray-500 text-white py-2 rounded-lg font-medium hidden">
+                        EDIT ABSEN
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIWAYAT TAB -->
+        <div id="content-riwayat" class="tab-content hidden">
+            <div class="bg-white rounded-xl p-4 shadow-md">
+                <h3 class="text-lg font-bold text-center mb-4 text-gray-800">RIWAYAT ABSENSI</h3>
+                
+                <!-- Filter Controls -->
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <select id="historyMonth" class="border rounded-lg px-3 py-2 text-sm" onchange="updateHistory()">
+                        <option value="0">JANUARI</option>
+                        <option value="1">FEBRUARI</option>
+                        <option value="2">MARET</option>
+                        <option value="3">APRIL</option>
+                        <option value="4">MEI</option>
+                        <option value="5">JUNI</option>
+                        <option value="6">JULI</option>
+                        <option value="7">AGUSTUS</option>
+                        <option value="8">SEPTEMBER</option>
+                        <option value="9">OKTOBER</option>
+                        <option value="10">NOVEMBER</option>
+                        <option value="11">DESEMBER</option>
+                    </select>
+                    <select id="historyYear" class="border rounded-lg px-3 py-2 text-sm" onchange="updateHistory()">
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                        <option value="2029">2029</option>
+                        <option value="2030">2030</option>
+                    </select>
+                </div>
+
+                <!-- History Table -->
+                <div class="overflow-x-auto">
+                    <div id="historyTable">
+                        <p class="text-gray-500 text-center py-8">PILIH BULAN DAN TAHUN UNTUK MELIHAT RIWAYAT</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REKAP TAB -->
+        <div id="content-rekap" class="tab-content hidden">
+            <div class="bg-white rounded-xl p-4 shadow-md">
+                <h3 class="text-lg font-bold text-center mb-4 text-gray-800">REKAP ABSENSI</h3>
+                
+                <!-- Rekap Controls -->
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    <select id="rekapMonth" class="border rounded-lg px-3 py-2 text-sm" onchange="updateRekap()">
+                        <option value="0">JANUARI</option>
+                        <option value="1">FEBRUARI</option>
+                        <option value="2">MARET</option>
+                        <option value="3">APRIL</option>
+                        <option value="4">MEI</option>
+                        <option value="5">JUNI</option>
+                        <option value="6">JULI</option>
+                        <option value="7">AGUSTUS</option>
+                        <option value="8">SEPTEMBER</option>
+                        <option value="9">OKTOBER</option>
+                        <option value="10">NOVEMBER</option>
+                        <option value="11">DESEMBER</option>
+                    </select>
+                    <select id="rekapYear" class="border rounded-lg px-3 py-2 text-sm" onchange="updateRekap()">
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                        <option value="2029">2029</option>
+                        <option value="2030">2030</option>
+                    </select>
+                </div>
+
+                <!-- Rekap Table -->
+                <div class="overflow-x-auto">
+                    <div id="rekapTable">
+                        <p class="text-gray-500 text-center py-8">PILIH BULAN DAN TAHUN UNTUK MELIHAT REKAP</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CETAK/KIRIM TAB -->
+        <div id="content-cetak" class="tab-content hidden">
+            <div class="space-y-4">
+                <!-- Download Riwayat Section -->
+                <div class="bg-white rounded-xl p-4 shadow-md">
+                    <h3 class="text-lg font-bold text-center mb-4 text-gray-800">DOWNLOAD RIWAYAT</h3>
+                    
+                    <!-- Month/Year Selection for History -->
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <select id="downloadHistoryMonth" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="all">SEMUA DATA</option>
+                            <option value="0">JANUARI</option>
+                            <option value="1">FEBRUARI</option>
+                            <option value="2">MARET</option>
+                            <option value="3">APRIL</option>
+                            <option value="4">MEI</option>
+                            <option value="5">JUNI</option>
+                            <option value="6">JULI</option>
+                            <option value="7">AGUSTUS</option>
+                            <option value="8">SEPTEMBER</option>
+                            <option value="9">OKTOBER</option>
+                            <option value="10">NOVEMBER</option>
+                            <option value="11">DESEMBER</option>
+                        </select>
+                        <select id="downloadHistoryYear" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="showDownloadHistoryModal()" class="w-full btn-primary text-white py-3 rounded-lg font-medium hover:shadow-lg transition-all">
+                        📥 DOWNLOAD RIWAYAT
+                    </button>
+                </div>
+
+                <!-- Download Rekap Section -->
+                <div class="bg-white rounded-xl p-4 shadow-md">
+                    <h3 class="text-lg font-bold text-center mb-4 text-gray-800">DOWNLOAD REKAP</h3>
+                    
+                    <!-- Month/Year Selection for Recap -->
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <select id="downloadRekapMonth" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="all">SEMUA DATA</option>
+                            <option value="0">JANUARI</option>
+                            <option value="1">FEBRUARI</option>
+                            <option value="2">MARET</option>
+                            <option value="3">APRIL</option>
+                            <option value="4">MEI</option>
+                            <option value="5">JUNI</option>
+                            <option value="6">JULI</option>
+                            <option value="7">AGUSTUS</option>
+                            <option value="8">SEPTEMBER</option>
+                            <option value="9">OKTOBER</option>
+                            <option value="10">NOVEMBER</option>
+                            <option value="11">DESEMBER</option>
+                        </select>
+                        <select id="downloadRekapYear" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="showDownloadRekapModal()" class="w-full btn-primary text-white py-3 rounded-lg font-medium hover:shadow-lg transition-all">
+                        📥 DOWNLOAD REKAP
+                    </button>
+                </div>
+
+                <!-- Send Section -->
+                <div class="bg-white rounded-xl p-4 shadow-md">
+                    <h3 class="text-lg font-bold text-center mb-4 text-gray-800">KIRIM LAPORAN</h3>
+                    
+                    <!-- Month/Year Selection for Send -->
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <select id="sendMonth" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="all">SEMUA DATA</option>
+                            <option value="0">JANUARI</option>
+                            <option value="1">FEBRUARI</option>
+                            <option value="2">MARET</option>
+                            <option value="3">APRIL</option>
+                            <option value="4">MEI</option>
+                            <option value="5">JUNI</option>
+                            <option value="6">JULI</option>
+                            <option value="7">AGUSTUS</option>
+                            <option value="8">SEPTEMBER</option>
+                            <option value="9">OKTOBER</option>
+                            <option value="10">NOVEMBER</option>
+                            <option value="11">DESEMBER</option>
+                        </select>
+                        <select id="sendYear" class="border rounded-lg px-3 py-2 text-sm">
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <button onclick="sendWhatsApp()" class="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-all">
+                            📱 KIRIM WA
+                        </button>
+                        <button onclick="sendEmail()" class="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-all">
+                            📧 KIRIM EMAIL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div id="addStudentModal" class="fixed inset-0 bg-black bg-opacity-50 modal hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold mb-4 text-center">TAMBAH SISWA</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">NAMA SISWA</label>
+                    <input type="text" id="studentName" class="w-full border rounded-lg px-3 py-2" placeholder="Masukkan nama siswa">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">NIS</label>
+                    <input type="number" id="studentNIS" class="w-full border rounded-lg px-3 py-2" placeholder="Masukkan NIS">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">JENIS KELAMIN</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="selectGender('LAKI-LAKI')" id="maleBtn" class="py-2 px-4 border rounded-lg hover:bg-blue-50 transition-colors">LAKI-LAKI</button>
+                        <button onclick="selectGender('PEREMPUAN')" id="femaleBtn" class="py-2 px-4 border rounded-lg hover:bg-pink-50 transition-colors">PEREMPUAN</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <button onclick="closeAddStudentModal()" class="w-full bg-gray-500 text-white py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors">
+                    KEMBALI
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div id="editStudentModal" class="fixed inset-0 bg-black bg-opacity-50 modal hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold mb-4 text-center">EDIT SISWA</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">NAMA SISWA</label>
+                    <input type="text" id="editStudentName" class="w-full border rounded-lg px-3 py-2">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">NIS</label>
+                    <input type="number" id="editStudentNIS" class="w-full border rounded-lg px-3 py-2">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">JENIS KELAMIN</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="selectEditGender('LAKI-LAKI')" id="editMaleBtn" class="py-2 px-4 border rounded-lg hover:bg-blue-50 transition-colors">LAKI-LAKI</button>
+                        <button onclick="selectEditGender('PEREMPUAN')" id="editFemaleBtn" class="py-2 px-4 border rounded-lg hover:bg-pink-50 transition-colors">PEREMPUAN</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <p class="text-xs text-gray-600 mb-4">* CATATAN: HAPUS NAMA DI KOLOM NAMA SISWA UNTUK MENGHAPUS DATA SISWA</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="closeEditStudentModal()" class="bg-gray-500 text-white py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors">
+                        KEMBALI
+                    </button>
+                    <button onclick="saveEditStudent()" class="btn-primary text-white py-2 rounded-lg font-medium hover:shadow-lg transition-all">
+                        SIMPAN
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download History Modal -->
+    <div id="downloadHistoryModal" class="fixed inset-0 bg-black bg-opacity-50 modal hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold mb-4 text-center">PILIH FORMAT RIWAYAT</h3>
+            
+            <div class="space-y-3">
+                <button onclick="downloadHistoryExcel()" class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                    📊 EXCEL (.csv)
+                </button>
+                <button onclick="downloadHistoryPDF()" class="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-colors">
+                    📄 FILE PDF (.pdf)
+                </button>
+            </div>
+
+            <div class="mt-4">
+                <button onclick="closeDownloadHistoryModal()" class="w-full bg-gray-500 text-white py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors">
+                    KEMBALI
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download Rekap Modal -->
+    <div id="downloadRekapModal" class="fixed inset-0 bg-black bg-opacity-50 modal hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold mb-4 text-center">PILIH FORMAT REKAP</h3>
+            
+            <div class="space-y-3">
+                <button onclick="downloadRekapExcel()" class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors">
+                    📊 EXCEL (.csv)
+                </button>
+                <button onclick="downloadRekapPDF()" class="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-colors">
+                    📄 FILE PDF (.pdf)
+                </button>
+            </div>
+
+            <div class="mt-4">
+                <button onclick="closeDownloadRekapModal()" class="w-full bg-gray-500 text-white py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors">
+                    KEMBALI
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let students = JSON.parse(localStorage.getItem('students')) || [];
+        let attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+        let holidays = JSON.parse(localStorage.getItem('holidays')) || {};
+        let currentEditingStudent = null;
+        let attendanceSaved = false;
+        let autosaveInterval;
+
+        // Autosave functions
+        function startAutosave() {
+            // Save every 5 seconds
+            autosaveInterval = setInterval(() => {
+                saveAllData();
+                showAutosaveIndicator();
+            }, 5000);
+        }
+
+        function saveAllData() {
+            try {
+                localStorage.setItem('students', JSON.stringify(students));
+                localStorage.setItem('attendance', JSON.stringify(attendance));
+                localStorage.setItem('holidays', JSON.stringify(holidays));
+                
+                // Save school information
+                const schoolInfo = {
+                    schoolName: document.getElementById('schoolName').value,
+                    className: document.getElementById('className').value,
+                    teacherName: document.getElementById('teacherName').value
+                };
+                localStorage.setItem('schoolInfo', JSON.stringify(schoolInfo));
+            } catch (error) {
+                console.error('Autosave error:', error);
+            }
+        }
+
+        function loadSchoolInfo() {
+            try {
+                const schoolInfo = JSON.parse(localStorage.getItem('schoolInfo')) || {};
+                if (schoolInfo.schoolName) document.getElementById('schoolName').value = schoolInfo.schoolName;
+                if (schoolInfo.className) document.getElementById('className').value = schoolInfo.className;
+                if (schoolInfo.teacherName) document.getElementById('teacherName').value = schoolInfo.teacherName;
+            } catch (error) {
+                console.error('Load school info error:', error);
+            }
+        }
+
+        function showAutosaveIndicator() {
+            const indicator = document.getElementById('autosaveIndicator');
+            indicator.classList.remove('animate-pulse');
+            indicator.classList.add('animate-bounce');
+            indicator.style.backgroundColor = '#22c55e'; // Green
+            
+            setTimeout(() => {
+                indicator.classList.remove('animate-bounce');
+                indicator.classList.add('animate-pulse');
+                indicator.style.backgroundColor = '#4ade80'; // Light green
+            }, 1000);
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            updateStudentCount();
+            renderStudentList();
+            loadSchoolInfo();
+            startAutosave();
+            
+            // Set current date
+            const today = new Date();
+            document.getElementById('attendanceDate').value = today.toISOString().split('T')[0];
+            
+            // Set current month/year for filters
+            document.getElementById('historyMonth').value = today.getMonth();
+            document.getElementById('historyYear').value = today.getFullYear();
+            document.getElementById('rekapMonth').value = today.getMonth();
+            document.getElementById('rekapYear').value = today.getFullYear();
+            document.getElementById('downloadHistoryMonth').value = today.getMonth();
+            document.getElementById('downloadHistoryYear').value = today.getFullYear();
+            document.getElementById('downloadRekapMonth').value = today.getMonth();
+            document.getElementById('downloadRekapYear').value = today.getFullYear();
+            document.getElementById('sendMonth').value = today.getMonth();
+            document.getElementById('sendYear').value = today.getFullYear();
+            
+            updateAttendanceDate();
+        });
+
+        // Save data before page unload
+        window.addEventListener('beforeunload', function() {
+            saveAllData();
+        });
+
+        // Save data when page visibility changes (mobile browsers)
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                saveAllData();
+            }
+        });
+
+        // Date and time functions
+        function updateDateTime() {
+            const now = new Date();
+            const days = ['MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU'];
+            
+            document.getElementById('currentDay').textContent = days[now.getDay()];
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID');
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
+        }
+
+        // Tab functions
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('text-gray-600');
+            });
+            
+            // Show selected tab content
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            
+            // Add active class to selected tab with specific color
+            const selectedTab = document.getElementById(`tab-${tabName}`);
+            selectedTab.classList.add('tab-active', `tab-${tabName}`);
+            selectedTab.classList.remove('text-gray-600');
+            
+            // Update content based on tab
+            if (tabName === 'absen') {
+                updateAttendanceDate();
+            } else if (tabName === 'riwayat') {
+                updateHistory();
+            } else if (tabName === 'rekap') {
+                updateRekap();
+            }
+        }
+
+        // Student management functions
+        function showAddStudentModal() {
+            document.getElementById('addStudentModal').classList.remove('hidden');
+            document.getElementById('studentName').value = '';
+            document.getElementById('studentNIS').value = '';
+            resetGenderButtons();
+        }
+
+        function closeAddStudentModal() {
+            document.getElementById('addStudentModal').classList.add('hidden');
+        }
+
+        function selectGender(gender) {
+            const name = document.getElementById('studentName').value.trim().toUpperCase();
+            const nis = document.getElementById('studentNIS').value.trim();
+            
+            if (!name || !nis) {
+                alert('MOHON ISI NAMA DAN NIS TERLEBIH DAHULU');
+                return;
+            }
+            
+            // Check for duplicate
+            const duplicate = students.find(s => s.name === name && s.nis === nis);
+            if (duplicate) {
+                alert('DATA SISWA DENGAN NAMA DAN NIS YANG SAMA SUDAH ADA');
+                return;
+            }
+            
+            // Add student
+            const student = {
+                id: Date.now(),
+                name: name,
+                nis: nis,
+                gender: gender
+            };
+            
+            students.push(student);
+            students.sort((a, b) => a.name.localeCompare(b.name));
+            
+            localStorage.setItem('students', JSON.stringify(students));
+            updateStudentCount();
+            renderStudentList();
+            closeAddStudentModal();
+        }
+
+        function resetGenderButtons() {
+            document.getElementById('maleBtn').classList.remove('bg-blue-500', 'text-white');
+            document.getElementById('femaleBtn').classList.remove('bg-pink-500', 'text-white');
+        }
+
+        function editStudent(id) {
+            const student = students.find(s => s.id === id);
+            if (!student) return;
+            
+            currentEditingStudent = id;
+            document.getElementById('editStudentName').value = student.name;
+            document.getElementById('editStudentNIS').value = student.nis;
+            
+            // Reset gender buttons
+            document.getElementById('editMaleBtn').classList.remove('bg-blue-500', 'text-white');
+            document.getElementById('editFemaleBtn').classList.remove('bg-pink-500', 'text-white');
+            
+            // Set current gender
+            if (student.gender === 'LAKI-LAKI') {
+                document.getElementById('editMaleBtn').classList.add('bg-blue-500', 'text-white');
+            } else {
+                document.getElementById('editFemaleBtn').classList.add('bg-pink-500', 'text-white');
+            }
+            
+            document.getElementById('editStudentModal').classList.remove('hidden');
+        }
+
+        function closeEditStudentModal() {
+            document.getElementById('editStudentModal').classList.add('hidden');
+            currentEditingStudent = null;
+        }
+
+        function selectEditGender(gender) {
+            document.getElementById('editMaleBtn').classList.remove('bg-blue-500', 'text-white');
+            document.getElementById('editFemaleBtn').classList.remove('bg-pink-500', 'text-white');
+            
+            if (gender === 'LAKI-LAKI') {
+                document.getElementById('editMaleBtn').classList.add('bg-blue-500', 'text-white');
+            } else {
+                document.getElementById('editFemaleBtn').classList.add('bg-pink-500', 'text-white');
+            }
+        }
+
+        function saveEditStudent() {
+            const name = document.getElementById('editStudentName').value.trim().toUpperCase();
+            const nis = document.getElementById('editStudentNIS').value.trim();
+            
+            if (!name) {
+                // Delete student if name is empty
+                students = students.filter(s => s.id !== currentEditingStudent);
+                localStorage.setItem('students', JSON.stringify(students));
+                updateStudentCount();
+                renderStudentList();
+                closeEditStudentModal();
+                return;
+            }
+            
+            if (!nis) {
+                alert('MOHON ISI NIS');
+                return;
+            }
+            
+            // Get selected gender
+            let gender = '';
+            if (document.getElementById('editMaleBtn').classList.contains('bg-blue-500')) {
+                gender = 'LAKI-LAKI';
+            } else if (document.getElementById('editFemaleBtn').classList.contains('bg-pink-500')) {
+                gender = 'PEREMPUAN';
+            } else {
+                alert('MOHON PILIH JENIS KELAMIN');
+                return;
+            }
+            
+            // Check for duplicate (excluding current student)
+            const duplicate = students.find(s => s.name === name && s.nis === nis && s.id !== currentEditingStudent);
+            if (duplicate) {
+                alert('DATA SISWA DENGAN NAMA DAN NIS YANG SAMA SUDAH ADA');
+                return;
+            }
+            
+            // Update student
+            const studentIndex = students.findIndex(s => s.id === currentEditingStudent);
+            if (studentIndex !== -1) {
+                students[studentIndex] = {
+                    ...students[studentIndex],
+                    name: name,
+                    nis: nis,
+                    gender: gender
+                };
+                
+                students.sort((a, b) => a.name.localeCompare(b.name));
+                localStorage.setItem('students', JSON.stringify(students));
+                updateStudentCount();
+                renderStudentList();
+                closeEditStudentModal();
+            }
+        }
+
+        function updateStudentCount() {
+            const totalStudents = students.length;
+            const maleCount = students.filter(student => student.gender === 'LAKI-LAKI').length;
+            const femaleCount = students.filter(student => student.gender === 'PEREMPUAN').length;
+            
+            document.getElementById('studentCount').textContent = `${totalStudents} 👦 L: ${maleCount} / 👧 P: ${femaleCount}`;
+        }
+
+        function renderStudentList() {
+            const container = document.getElementById('studentList');
+            
+            if (students.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">BELUM ADA DATA SISWA</p>';
+                return;
+            }
+            
+            container.innerHTML = students.map((student, index) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-medium">${student.name}</div>
+                        <div class="text-sm text-gray-600">NIS: ${student.nis} | ${student.gender}</div>
+                    </div>
+                    <button onclick="editStudent(${student.id})" class="bg-sky-500 text-white px-3 py-1 rounded text-sm hover:bg-sky-600 transition-colors">
+                        EDIT
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Attendance functions
+        function updateAttendanceDate() {
+            const selectedDate = document.getElementById('attendanceDate').value;
+            const date = new Date(selectedDate);
+            const dateKey = selectedDate;
+            
+            // Check if Sunday
+            if (date.getDay() === 0) {
+                showSundayNotice();
+                return;
+            }
+            
+            // Check if holiday
+            if (holidays[dateKey]) {
+                showHolidayNotice();
+                return;
+            }
+            
+            hideNotices();
+            renderAttendanceTable(dateKey);
+            updateSaveButton(dateKey);
+        }
+
+        function showSundayNotice() {
+            const notice = document.getElementById('holidayNotice');
+            const text = document.getElementById('holidayText');
+            
+            notice.className = 'sunday-notice mb-4 p-4 rounded-lg text-center text-white font-medium';
+            text.innerHTML = '🎉 HARI MINGGU LIBUR<br>Selamat beristirahat!';
+            notice.classList.remove('hidden');
+            
+            document.getElementById('attendanceControls').classList.add('hidden');
+            document.getElementById('attendanceTable').classList.add('hidden');
+            document.querySelector('.mt-4.flex.gap-2').classList.add('hidden');
+        }
+
+        function showHolidayNotice() {
+            const notice = document.getElementById('holidayNotice');
+            const text = document.getElementById('holidayText');
+            
+            notice.className = 'holiday-notice mb-4 p-4 rounded-lg text-center text-white font-medium';
+            text.innerHTML = '📌 HARI INI LIBUR';
+            notice.classList.remove('hidden');
+            
+            document.getElementById('attendanceControls').classList.add('hidden');
+            document.getElementById('attendanceTable').classList.add('hidden');
+            document.querySelector('.mt-4.flex.gap-2').classList.add('hidden');
+            
+            // Update holiday button
+            document.getElementById('holidayBtn').textContent = 'BATAL LIBUR';
+            document.getElementById('holidayBtn').classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+            document.getElementById('holidayBtn').classList.add('bg-red-500', 'hover:bg-red-600');
+        }
+
+        function hideNotices() {
+            document.getElementById('holidayNotice').classList.add('hidden');
+            document.getElementById('attendanceControls').classList.remove('hidden');
+            document.getElementById('attendanceTable').classList.remove('hidden');
+            document.querySelector('.mt-4.flex.gap-2').classList.remove('hidden');
+            
+            // Reset holiday button
+            document.getElementById('holidayBtn').textContent = 'TANDAI LIBUR';
+            document.getElementById('holidayBtn').classList.remove('bg-red-500', 'hover:bg-red-600');
+            document.getElementById('holidayBtn').classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+        }
+
+        function toggleHoliday() {
+            const selectedDate = document.getElementById('attendanceDate').value;
+            const date = new Date(selectedDate);
+            
+            if (date.getDay() === 0) {
+                alert('HARI MINGGU SUDAH OTOMATIS LIBUR');
+                return;
+            }
+            
+            if (holidays[selectedDate]) {
+                delete holidays[selectedDate];
+                localStorage.setItem('holidays', JSON.stringify(holidays));
+                updateAttendanceDate();
+            } else {
+                holidays[selectedDate] = true;
+                localStorage.setItem('holidays', JSON.stringify(holidays));
+                updateAttendanceDate();
+            }
+        }
+
+        function renderAttendanceTable(dateKey) {
+            const tbody = document.getElementById('attendanceBody');
+            
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-8 text-gray-500">BELUM ADA DATA SISWA</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = students.map((student, index) => {
+                const studentAttendance = attendance[dateKey]?.[student.id] || '';
+                
+                return `
+                    <tr class="border-b">
+                        <td class="p-2">${index + 1}</td>
+                        <td class="p-2">${student.name}</td>
+                        <td class="p-2">
+                            <div class="flex gap-1 justify-center">
+                                <button onclick="markAttendance(${student.id}, 'HADIR')" 
+                                        class="attendance-btn px-2 py-1 rounded text-xs ${studentAttendance === 'HADIR' ? 'bg-green-500 text-white selected' : 'bg-white border'}" 
+                                        ${attendanceSaved ? 'disabled' : ''}>H</button>
+                                <button onclick="markAttendance(${student.id}, 'SAKIT')" 
+                                        class="attendance-btn px-2 py-1 rounded text-xs ${studentAttendance === 'SAKIT' ? 'bg-blue-500 text-white selected' : 'bg-white border'}" 
+                                        ${attendanceSaved ? 'disabled' : ''}>S</button>
+                                <button onclick="markAttendance(${student.id}, 'IZIN')" 
+                                        class="attendance-btn px-2 py-1 rounded text-xs ${studentAttendance === 'IZIN' ? 'bg-yellow-500 text-white selected' : 'bg-white border'}" 
+                                        ${attendanceSaved ? 'disabled' : ''}>I</button>
+                                <button onclick="markAttendance(${student.id}, 'ALPA')" 
+                                        class="attendance-btn px-2 py-1 rounded text-xs ${studentAttendance === 'ALPA' ? 'bg-red-500 text-white selected' : 'bg-white border'}" 
+                                        ${attendanceSaved ? 'disabled' : ''}>A</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function markAttendance(studentId, status) {
+            if (attendanceSaved) return;
+            
+            const dateKey = document.getElementById('attendanceDate').value;
+            
+            if (!attendance[dateKey]) {
+                attendance[dateKey] = {};
+            }
+            
+            attendance[dateKey][studentId] = status;
+            localStorage.setItem('attendance', JSON.stringify(attendance));
+            
+            renderAttendanceTable(dateKey);
+        }
+
+        function markAllPresent() {
+            if (attendanceSaved) return;
+            
+            const dateKey = document.getElementById('attendanceDate').value;
+            
+            if (!attendance[dateKey]) {
+                attendance[dateKey] = {};
+            }
+            
+            students.forEach(student => {
+                attendance[dateKey][student.id] = 'HADIR';
+            });
+            
+            localStorage.setItem('attendance', JSON.stringify(attendance));
+            renderAttendanceTable(dateKey);
+        }
+
+        function saveAttendance() {
+            attendanceSaved = true;
+            document.getElementById('saveBtn').textContent = 'TERSIMPAN';
+            document.getElementById('saveBtn').classList.add('hidden');
+            document.getElementById('editBtn').classList.remove('hidden');
+            
+            // Disable all attendance buttons
+            document.querySelectorAll('.attendance-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+            });
+            
+            document.getElementById('attendanceControls').style.display = 'none';
+        }
+
+        function editAttendance() {
+            attendanceSaved = false;
+            document.getElementById('saveBtn').textContent = 'SIMPAN ABSEN';
+            document.getElementById('saveBtn').classList.remove('hidden');
+            document.getElementById('editBtn').classList.add('hidden');
+            
+            // Enable all attendance buttons
+            document.querySelectorAll('.attendance-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            });
+            
+            document.getElementById('attendanceControls').style.display = 'block';
+            
+            const dateKey = document.getElementById('attendanceDate').value;
+            renderAttendanceTable(dateKey);
+        }
+
+        function updateSaveButton(dateKey) {
+            const hasAttendanceData = attendance[dateKey] && Object.keys(attendance[dateKey]).length > 0;
+            
+            if (hasAttendanceData) {
+                attendanceSaved = true;
+                document.getElementById('saveBtn').textContent = 'TERSIMPAN';
+                document.getElementById('saveBtn').classList.add('hidden');
+                document.getElementById('editBtn').classList.remove('hidden');
+                document.getElementById('attendanceControls').style.display = 'none';
+            } else {
+                attendanceSaved = false;
+                document.getElementById('saveBtn').textContent = 'SIMPAN ABSEN';
+                document.getElementById('saveBtn').classList.remove('hidden');
+                document.getElementById('editBtn').classList.add('hidden');
+                document.getElementById('attendanceControls').style.display = 'block';
+            }
+        }
+
+        // History functions
+        function updateHistory() {
+            const month = parseInt(document.getElementById('historyMonth').value);
+            const year = parseInt(document.getElementById('historyYear').value);
+            
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+            
+            if (students.length === 0) {
+                document.getElementById('historyTable').innerHTML = '<p class="text-gray-500 text-center py-8">BELUM ADA DATA SISWA</p>';
+                return;
+            }
+            
+            let table = `
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="bg-sky-100">
+                            <th class="p-1 text-left sticky left-0 bg-sky-100">NO</th>
+                            <th class="p-1 text-left sticky left-8 bg-sky-100">NAMA</th>
+            `;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                table += `<th class="p-1 text-center">${day}</th>`;
+            }
+            
+            table += `</tr></thead><tbody>`;
+            
+            students.forEach((student, index) => {
+                table += `
+                    <tr class="border-b">
+                        <td class="p-1 sticky left-0 bg-white">${index + 1}</td>
+                        <td class="p-1 sticky left-8 bg-white text-xs">${student.name}</td>
+                `;
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const date = new Date(year, month, day);
+                    const studentAttendance = attendance[dateKey]?.[student.id] || '';
+                    
+                    let cellContent = '';
+                    let cellClass = 'p-1 text-center text-xs';
+                    
+                    if (date.getDay() === 0) {
+                        cellContent = 'M';
+                        cellClass += ' bg-green-100 text-green-600';
+                    } else if (holidays[dateKey]) {
+                        cellContent = 'L';
+                        cellClass += ' bg-yellow-100 text-yellow-600';
+                    } else {
+                        switch (studentAttendance) {
+                            case 'HADIR': cellContent = 'H'; cellClass += ' bg-green-100 text-green-600'; break;
+                            case 'SAKIT': cellContent = 'S'; cellClass += ' bg-blue-100 text-blue-600'; break;
+                            case 'IZIN': cellContent = 'I'; cellClass += ' bg-yellow-100 text-yellow-600'; break;
+                            case 'ALPA': cellContent = 'A'; cellClass += ' bg-red-100 text-red-600'; break;
+                            default: cellContent = '-'; cellClass += ' text-gray-400';
+                        }
+                    }
+                    
+                    table += `<td class="${cellClass}">${cellContent}</td>`;
+                }
+                
+                table += `</tr>`;
+            });
+            
+            table += `</tbody></table>`;
+            
+            document.getElementById('historyTable').innerHTML = `
+                <h4 class="font-bold text-center mb-2">${monthNames[month]} ${year}</h4>
+                <div class="overflow-x-auto">
+                    ${table}
+                </div>
+                <div class="mt-2 text-xs text-gray-600">
+                    <p>Keterangan: H=Hadir, S=Sakit, I=Izin, A=Alpa, M=Minggu, L=Libur</p>
+                </div>
+            `;
+        }
+
+        // Rekap functions
+        function updateRekap() {
+            const month = parseInt(document.getElementById('rekapMonth').value);
+            const year = parseInt(document.getElementById('rekapYear').value);
+            
+            const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+            
+            if (students.length === 0) {
+                document.getElementById('rekapTable').innerHTML = '<p class="text-gray-500 text-center py-8">BELUM ADA DATA SISWA</p>';
+                return;
+            }
+            
+            let table = `
+                <h4 class="font-bold text-center mb-2">REKAP ${monthNames[month]} ${year}</h4>
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="bg-sky-100">
+                            <th class="p-2 text-left">NO</th>
+                            <th class="p-2 text-left">NAMA SISWA</th>
+                            <th class="p-2 text-center">HADIR</th>
+                            <th class="p-2 text-center">SAKIT</th>
+                            <th class="p-2 text-center">IZIN</th>
+                            <th class="p-2 text-center">ALPA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            students.forEach((student, index) => {
+                let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const date = new Date(year, month, day);
+                    
+                    // Skip Sundays and holidays
+                    if (date.getDay() === 0 || holidays[dateKey]) continue;
+                    
+                    const studentAttendance = attendance[dateKey]?.[student.id];
+                    
+                    switch (studentAttendance) {
+                        case 'HADIR': hadir++; break;
+                        case 'SAKIT': sakit++; break;
+                        case 'IZIN': izin++; break;
+                        case 'ALPA': alpa++; break;
+                    }
+                }
+                
+                table += `
+                    <tr class="border-b">
+                        <td class="p-2">${index + 1}</td>
+                        <td class="p-2">${student.name}</td>
+                        <td class="p-2 text-center bg-green-50">${hadir}</td>
+                        <td class="p-2 text-center bg-blue-50">${sakit}</td>
+                        <td class="p-2 text-center bg-yellow-50">${izin}</td>
+                        <td class="p-2 text-center bg-red-50">${alpa}</td>
+                    </tr>
+                `;
+            });
+            
+            table += `</tbody></table>`;
+            
+            document.getElementById('rekapTable').innerHTML = table;
+        }
+
+        // Download and sharing functions
+        function showDownloadHistoryModal() {
+            document.getElementById('downloadHistoryModal').classList.remove('hidden');
+        }
+
+        function closeDownloadHistoryModal() {
+            document.getElementById('downloadHistoryModal').classList.add('hidden');
+        }
+
+        function showDownloadRekapModal() {
+            document.getElementById('downloadRekapModal').classList.remove('hidden');
+        }
+
+        function closeDownloadRekapModal() {
+            document.getElementById('downloadRekapModal').classList.add('hidden');
+        }
+
+        function downloadHistoryExcel() {
+            const monthValue = document.getElementById('downloadHistoryMonth').value;
+            const year = parseInt(document.getElementById('downloadHistoryYear').value);
+            const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+            
+            let csvContent = '';
+            let filename = '';
+            
+            if (monthValue === 'all') {
+                // Get all months that have attendance data
+                const monthsWithData = new Set();
+                Object.keys(attendance).forEach(dateKey => {
+                    const [yearStr, monthStr] = dateKey.split('-');
+                    if (parseInt(yearStr) === year) {
+                        monthsWithData.add(parseInt(monthStr) - 1);
+                    }
+                });
+                
+                const sortedMonths = Array.from(monthsWithData).sort((a, b) => a - b);
+                
+                if (sortedMonths.length === 0) {
+                    alert('TIDAK ADA DATA ABSENSI UNTUK TAHUN INI');
+                    return;
+                }
+                
+                csvContent = `RIWAYAT ABSENSI SEMUA DATA ${year}\n\n`;
+                filename = `Riwayat_Absensi_Semua_Data_${year}.csv`;
+                
+                // Process each month with data
+                sortedMonths.forEach((month, monthIndex) => {
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    
+                    if (monthIndex > 0) csvContent += '\n\n';
+                    csvContent += `RIWAYAT ABSENSI ${monthNames[month]} ${year}\n`;
+                    
+                    // Header
+                    csvContent += 'NO,NAMA SISWA';
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        csvContent += `,${day}`;
+                    }
+                    csvContent += ',HADIR,SAKIT,IZIN,ALPA\n';
+                    
+                    // Data rows
+                    students.forEach((student, index) => {
+                        let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                        
+                        csvContent += `${index + 1},"${student.name}"`;
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const date = new Date(year, month, day);
+                            const studentAttendance = attendance[dateKey]?.[student.id] || '';
+                            
+                            let cellContent = '';
+                            if (date.getDay() === 0) {
+                                cellContent = 'M';
+                            } else if (holidays[dateKey]) {
+                                cellContent = 'L';
+                            } else {
+                                switch (studentAttendance) {
+                                    case 'HADIR': cellContent = 'H'; hadir++; break;
+                                    case 'SAKIT': cellContent = 'S'; sakit++; break;
+                                    case 'IZIN': cellContent = 'I'; izin++; break;
+                                    case 'ALPA': cellContent = 'A'; alpa++; break;
+                                    default: cellContent = '-';
+                                }
+                            }
+                            
+                            csvContent += `,${cellContent}`;
+                        }
+                        
+                        // Add summary columns
+                        csvContent += `,${hadir},${sakit},${izin},${alpa}\n`;
+                    });
+                });
+                
+            } else {
+                // Single month download
+                const month = parseInt(monthValue);
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                csvContent = `RIWAYAT ABSENSI ${monthNames[month]} ${year}\n\n`;
+                filename = `Riwayat_Absensi_${monthNames[month]}_${year}.csv`;
+                
+                // Header
+                csvContent += 'NO,NAMA SISWA';
+                for (let day = 1; day <= daysInMonth; day++) {
+                    csvContent += `,${day}`;
+                }
+                csvContent += ',HADIR,SAKIT,IZIN,ALPA\n';
+                
+                // Data rows
+                students.forEach((student, index) => {
+                    let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                    
+                    csvContent += `${index + 1},"${student.name}"`;
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const date = new Date(year, month, day);
+                        const studentAttendance = attendance[dateKey]?.[student.id] || '';
+                        
+                        let cellContent = '';
+                        if (date.getDay() === 0) {
+                            cellContent = 'M';
+                        } else if (holidays[dateKey]) {
+                            cellContent = 'L';
+                        } else {
+                            switch (studentAttendance) {
+                                case 'HADIR': cellContent = 'H'; hadir++; break;
+                                case 'SAKIT': cellContent = 'S'; sakit++; break;
+                                case 'IZIN': cellContent = 'I'; izin++; break;
+                                case 'ALPA': cellContent = 'A'; alpa++; break;
+                                default: cellContent = '-';
+                            }
+                        }
+                        
+                        csvContent += `,${cellContent}`;
+                    }
+                    
+                    // Add summary columns
+                    csvContent += `,${hadir},${sakit},${izin},${alpa}\n`;
+                });
+            }
+            
+            csvContent += '\nKeterangan: H=Hadir, S=Sakit, I=Izin, A=Alpa, M=Minggu, L=Libur';
+            
+            // Download CSV file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            closeDownloadHistoryModal();
+        }
+
+        function downloadHistoryPDF() {
+            const monthValue = document.getElementById('downloadHistoryMonth').value;
+            const year = parseInt(document.getElementById('downloadHistoryYear').value);
+            const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+            
+            // Load jsPDF library
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            script.onload = function() {
+                const { jsPDF } = window.jspdf;
+                // Use landscape orientation
+                const doc = new jsPDF('landscape');
+                
+                let filename = '';
+                let yPosition = 20;
+                
+                // Set font
+                doc.setFont('helvetica');
+                
+                if (monthValue === 'all') {
+                    // Get all months that have attendance data
+                    const monthsWithData = new Set();
+                    Object.keys(attendance).forEach(dateKey => {
+                        const [yearStr, monthStr] = dateKey.split('-');
+                        if (parseInt(yearStr) === year) {
+                            monthsWithData.add(parseInt(monthStr) - 1);
+                        }
+                    });
+                    
+                    const sortedMonths = Array.from(monthsWithData).sort((a, b) => a - b);
+                    
+                    if (sortedMonths.length === 0) {
+                        alert('TIDAK ADA DATA ABSENSI UNTUK TAHUN INI');
+                        return;
+                    }
+                    
+                    filename = `Riwayat_Absensi_Semua_Data_${year}.pdf`;
+                    
+                    // Title
+                    doc.setFontSize(16);
+                    doc.text(`RIWAYAT ABSENSI SEMUA DATA ${year}`, 148, yPosition, { align: 'center' });
+                    yPosition += 20;
+                    
+                    // Process each month with data
+                    sortedMonths.forEach((month, monthIndex) => {
+                        if (monthIndex > 0) {
+                            doc.addPage('landscape');
+                            yPosition = 20;
+                        }
+                        
+                        const daysInMonth = new Date(year, month + 1, 0).getDate();
+                        
+                        // Month title
+                        doc.setFontSize(12);
+                        doc.text(`RIWAYAT ABSENSI ${monthNames[month]} ${year}`, 20, yPosition);
+                        yPosition += 15;
+                        
+                        // Create table data with colors
+                        const tableData = [];
+                        const headers = ['NO', 'NAMA SISWA'];
+                        
+                        // Add day headers
+                        for (let day = 1; day <= daysInMonth; day++) {
+                            headers.push(day.toString());
+                        }
+                        headers.push('H', 'S', 'I', 'A');
+                        
+                        tableData.push(headers);
+                        
+                        // Add student data
+                        students.forEach((student, index) => {
+                            let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                            const row = [index + 1, student.name];
+                            const rowColors = ['white', 'white']; // NO and NAMA columns
+                            
+                            for (let day = 1; day <= daysInMonth; day++) {
+                                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                const date = new Date(year, month, day);
+                                const studentAttendance = attendance[dateKey]?.[student.id] || '';
+                                
+                                let cellContent = '';
+                                let cellColor = 'white';
+                                
+                                if (date.getDay() === 0) {
+                                    cellContent = 'M';
+                                    cellColor = 'green'; // Minggu = Hijau
+                                } else if (holidays[dateKey]) {
+                                    cellContent = 'L';
+                                    cellColor = 'yellow'; // Libur = Kuning
+                                } else {
+                                    switch (studentAttendance) {
+                                        case 'HADIR': cellContent = 'H'; cellColor = 'lightgreen'; hadir++; break;
+                                        case 'SAKIT': cellContent = 'S'; cellColor = 'lightblue'; sakit++; break;
+                                        case 'IZIN': cellContent = 'I'; cellColor = 'lightyellow'; izin++; break;
+                                        case 'ALPA': cellContent = 'A'; cellColor = 'lightred'; alpa++; break;
+                                        default: cellContent = '-'; cellColor = 'white';
+                                    }
+                                }
+                                
+                                row.push(cellContent);
+                                rowColors.push(cellColor);
+                            }
+                            
+                            // Add summary columns
+                            row.push(hadir, sakit, izin, alpa);
+                            rowColors.push('lightgreen', 'lightblue', 'lightyellow', 'lightred');
+                            
+                            tableData.push(row);
+                            tableData.colors = tableData.colors || [];
+                            tableData.colors.push(rowColors);
+                        });
+                        
+                        // Draw table with colors
+                        drawColoredTable(doc, tableData, 20, yPosition, year, month);
+                    });
+                    
+                } else {
+                    // Single month download
+                    const month = parseInt(monthValue);
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    
+                    filename = `Riwayat_Absensi_${monthNames[month]}_${year}.pdf`;
+                    
+                    // Title
+                    doc.setFontSize(16);
+                    doc.text(`RIWAYAT ABSENSI ${monthNames[month]} ${year}`, 148, yPosition, { align: 'center' });
+                    yPosition += 20;
+                    
+                    // Create table data with colors
+                    const tableData = [];
+                    const headers = ['NO', 'NAMA SISWA'];
+                    
+                    // Add day headers
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        headers.push(day.toString());
+                    }
+                    headers.push('H', 'S', 'I', 'A');
+                    
+                    tableData.push(headers);
+                    
+                    // Add student data
+                    students.forEach((student, index) => {
+                        let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                        const row = [index + 1, student.name];
+                        const rowColors = ['white', 'white']; // NO and NAMA columns
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const date = new Date(year, month, day);
+                            const studentAttendance = attendance[dateKey]?.[student.id] || '';
+                            
+                            let cellContent = '';
+                            let cellColor = 'white';
+                            
+                            if (date.getDay() === 0) {
+                                cellContent = 'M';
+                                cellColor = 'green'; // Minggu = Hijau
+                            } else if (holidays[dateKey]) {
+                                cellContent = 'L';
+                                cellColor = 'yellow'; // Libur = Kuning
+                            } else {
+                                switch (studentAttendance) {
+                                    case 'HADIR': cellContent = 'H'; cellColor = 'lightgreen'; hadir++; break;
+                                    case 'SAKIT': cellContent = 'S'; cellColor = 'lightblue'; sakit++; break;
+                                    case 'IZIN': cellContent = 'I'; cellColor = 'lightyellow'; izin++; break;
+                                    case 'ALPA': cellContent = 'A'; cellColor = 'lightred'; alpa++; break;
+                                    default: cellContent = '-'; cellColor = 'white';
+                                }
+                            }
+                            
+                            row.push(cellContent);
+                            rowColors.push(cellColor);
+                        }
+                        
+                        // Add summary columns
+                        row.push(hadir, sakit, izin, alpa);
+                        rowColors.push('lightgreen', 'lightblue', 'lightyellow', 'lightred');
+                        
+                        tableData.push(row);
+                        tableData.colors = tableData.colors || [];
+                        tableData.colors.push(rowColors);
+                    });
+                    
+                    // Draw table with colors
+                    drawColoredTable(doc, tableData, 20, yPosition, year, month);
+                }
+                
+                // Add footer note
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.text('Keterangan: H=Hadir (Hijau Muda), S=Sakit (Biru Muda), I=Izin (Kuning Muda), A=Alpa (Merah Muda), M=Minggu (Hijau), L=Libur (Kuning)', 20, 200);
+                }
+                
+                // Save PDF
+                doc.save(filename);
+                closeDownloadHistoryModal();
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        // Helper function to draw colored table in PDF
+        function drawColoredTable(doc, data, x, y, year, month) {
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const pageWidth = 297; // A4 landscape width in mm
+            const margins = 20; // Left and right margins
+            const availableWidth = pageWidth - (margins * 2); // 257mm available width
+            const noColumnWidth = 10;
+            const nameColumnWidth = 40;
+            const summaryColumnWidth = 12; // For H, S, I, A columns
+            const summaryColumnsTotal = 4 * summaryColumnWidth; // 4 summary columns
+            
+            // Calculate remaining width for day columns
+            const remainingWidth = availableWidth - noColumnWidth - nameColumnWidth - summaryColumnsTotal;
+            const dayColumnWidth = Math.max(4, remainingWidth / daysInMonth); // Minimum 4, but adjust based on available space
+            
+            // Calculate total table width
+            const totalTableWidth = noColumnWidth + nameColumnWidth + (daysInMonth * dayColumnWidth) + summaryColumnsTotal;
+            
+            // Center the table horizontally
+            const centeredX = (pageWidth - totalTableWidth) / 2;
+            
+            const cellHeight = 5;
+            
+            // Color mapping
+            const colorMap = {
+                'white': [255, 255, 255],
+                'lightgreen': [220, 252, 231],    // Hadir
+                'lightblue': [219, 234, 254],     // Sakit
+                'lightyellow': [254, 249, 195],   // Izin
+                'lightred': [254, 226, 226],      // Alpa
+                'green': [187, 247, 208],         // Minggu
+                'yellow': [253, 230, 138]         // Libur
+            };
+            
+            data.forEach((row, rowIndex) => {
+                row.forEach((cell, colIndex) => {
+                    let currentX = x;
+                    let currentWidth = dayColumnWidth;
+                    
+                    // Calculate position and width for each column using centered position
+                    if (colIndex === 0) {
+                        currentX = centeredX;
+                        currentWidth = noColumnWidth; // NO column
+                    } else if (colIndex === 1) {
+                        currentX = centeredX + noColumnWidth;
+                        currentWidth = nameColumnWidth; // NAMA column
+                    } else if (colIndex >= 2 && colIndex < row.length - 4) {
+                        // Day columns
+                        currentX = centeredX + noColumnWidth + nameColumnWidth + (colIndex - 2) * dayColumnWidth;
+                        currentWidth = dayColumnWidth;
+                    } else {
+                        // Summary columns (H, S, I, A)
+                        const summaryIndex = colIndex - (row.length - 4);
+                        currentX = centeredX + noColumnWidth + nameColumnWidth + daysInMonth * dayColumnWidth + summaryIndex * summaryColumnWidth;
+                        currentWidth = summaryColumnWidth;
+                    }
+                    
+                    const currentY = y + rowIndex * cellHeight;
+                    
+                    // Set cell background color
+                    if (rowIndex > 0 && data.colors && data.colors[rowIndex - 1] && data.colors[rowIndex - 1][colIndex]) {
+                        const colorName = data.colors[rowIndex - 1][colIndex];
+                        const color = colorMap[colorName] || [255, 255, 255];
+                        doc.setFillColor(color[0], color[1], color[2]);
+                        doc.rect(currentX, currentY, currentWidth, cellHeight, 'F');
+                    } else if (rowIndex === 0) {
+                        // Header background
+                        doc.setFillColor(240, 240, 240);
+                        doc.rect(currentX, currentY, currentWidth, cellHeight, 'F');
+                    }
+                    
+                    // Draw cell border
+                    doc.setDrawColor(0, 0, 0);
+                    doc.rect(currentX, currentY, currentWidth, cellHeight);
+                    
+                    // Add text
+                    doc.setTextColor(0, 0, 0);
+                    
+                    // Adjust font size based on column width
+                    if (currentWidth < 6) {
+                        doc.setFontSize(4);
+                    } else if (currentWidth < 10) {
+                        doc.setFontSize(5);
+                    } else {
+                        doc.setFontSize(6);
+                    }
+                    
+                    if (rowIndex === 0) {
+                        doc.setFont('helvetica', 'bold');
+                    } else {
+                        doc.setFont('helvetica', 'normal');
+                    }
+                    
+                    const text = cell.toString();
+                    const textX = currentX + currentWidth / 2;
+                    const textY = currentY + cellHeight / 2 + 1.5;
+                    
+                    if (colIndex === 1) {
+                        // Left align name column and truncate if too long
+                        let displayText = text;
+                        if (text.length > 12) {
+                            displayText = text.substring(0, 10) + '..';
+                        }
+                        doc.text(displayText, currentX + 1, textY);
+                    } else {
+                        // Center align other columns
+                        doc.text(text, textX, textY, { align: 'center' });
+                    }
+                });
+            });
+        }
+
+        function downloadHistoryHTML() {
+            const monthValue = document.getElementById('downloadHistoryMonth').value;
+            const year = parseInt(document.getElementById('downloadHistoryYear').value);
+            const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+            
+            let htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Riwayat Absensi ${monthValue === 'all' ? 'Semua Data' : monthNames[parseInt(monthValue)]} ${year}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        table { border-collapse: collapse; width: 100%; font-size: 12px; margin-bottom: 30px; }
+                        th, td { border: 1px solid #ddd; padding: 4px; text-align: center; }
+                        th { background-color: #f2f2f2; }
+                        .name { text-align: left; }
+                        .green { background-color: #dcfce7; color: #166534; }
+                        .blue { background-color: #dbeafe; color: #1e40af; }
+                        .yellow { background-color: #fef3c7; color: #a16207; }
+                        .red { background-color: #fee2e2; color: #dc2626; }
+                        .gray { color: #9ca3af; }
+                        .month-title { font-size: 18px; font-weight: bold; margin: 20px 0 10px 0; }
+                        .summary { background-color: #f8fafc; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+            `;
+            
+            let filename = '';
+            
+            if (monthValue === 'all') {
+                // Get all months that have attendance data
+                const monthsWithData = new Set();
+                Object.keys(attendance).forEach(dateKey => {
+                    const [yearStr, monthStr] = dateKey.split('-');
+                    if (parseInt(yearStr) === year) {
+                        monthsWithData.add(parseInt(monthStr) - 1);
+                    }
+                });
+                
+                const sortedMonths = Array.from(monthsWithData).sort((a, b) => a - b);
+                
+                if (sortedMonths.length === 0) {
+                    alert('TIDAK ADA DATA ABSENSI UNTUK TAHUN INI');
+                    return;
+                }
+                
+                htmlContent += `<h1>RIWAYAT ABSENSI SEMUA DATA ${year}</h1>`;
+                filename = `Riwayat_Absensi_Semua_Data_${year}.html`;
+                
+                // Process each month with data
+                sortedMonths.forEach((month, monthIndex) => {
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    
+                    htmlContent += `<div class="month-title">RIWAYAT ABSENSI ${monthNames[month]} ${year}</div>`;
+                    htmlContent += `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>NO</th>
+                                    <th>NAMA SISWA</th>
+                    `;
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        htmlContent += `<th>${day}</th>`;
+                    }
+                    
+                    htmlContent += `<th class="summary">HADIR</th><th class="summary">SAKIT</th><th class="summary">IZIN</th><th class="summary">ALPA</th></tr></thead><tbody>`;
+                    
+                    students.forEach((student, index) => {
+                        let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                        
+                        htmlContent += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td class="name">${student.name}</td>
+                        `;
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const date = new Date(year, month, day);
+                            const studentAttendance = attendance[dateKey]?.[student.id] || '';
+                            
+                            let cellContent = '';
+                            let cellClass = '';
+                            
+                            if (date.getDay() === 0) {
+                                cellContent = 'M';
+                                cellClass = 'green';
+                            } else if (holidays[dateKey]) {
+                                cellContent = 'L';
+                                cellClass = 'yellow';
+                            } else {
+                                switch (studentAttendance) {
+                                    case 'HADIR': cellContent = 'H'; cellClass = 'green'; hadir++; break;
+                                    case 'SAKIT': cellContent = 'S'; cellClass = 'blue'; sakit++; break;
+                                    case 'IZIN': cellContent = 'I'; cellClass = 'yellow'; izin++; break;
+                                    case 'ALPA': cellContent = 'A'; cellClass = 'red'; alpa++; break;
+                                    default: cellContent = '-'; cellClass = 'gray';
+                                }
+                            }
+                            
+                            htmlContent += `<td class="${cellClass}">${cellContent}</td>`;
+                        }
+                        
+                        // Add summary columns
+                        htmlContent += `<td class="summary green">${hadir}</td><td class="summary blue">${sakit}</td><td class="summary yellow">${izin}</td><td class="summary red">${alpa}</td></tr>`;
+                    });
+                    
+                    htmlContent += `</tbody></table>`;
+                });
+                
+            } else {
+                // Single month download
+                const month = parseInt(monthValue);
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                htmlContent += `<h1>RIWAYAT ABSENSI ${monthNames[month]} ${year}</h1>`;
+                filename = `Riwayat_Absensi_${monthNames[month]}_${year}.html`;
+                
+                htmlContent += `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>NO</th>
+                                <th>NAMA SISWA</th>
+                `;
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    htmlContent += `<th>${day}</th>`;
+                }
+                
+                htmlContent += `<th class="summary">HADIR</th><th class="summary">SAKIT</th><th class="summary">IZIN</th><th class="summary">ALPA</th></tr></thead><tbody>`;
+                
+                students.forEach((student, index) => {
+                    let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                    
+                    htmlContent += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td class="name">${student.name}</td>
+                    `;
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const date = new Date(year, month, day);
+                        const studentAttendance = attendance[dateKey]?.[student.id] || '';
+                        
+                        let cellContent = '';
+                        let cellClass = '';
+                        
+                        if (date.getDay() === 0) {
+                            cellContent = 'M';
+                            cellClass = 'green';
+                        } else if (holidays[dateKey]) {
+                            cellContent = 'L';
+                            cellClass = 'yellow';
+                        } else {
+                            switch (studentAttendance) {
+                                case 'HADIR': cellContent = 'H'; cellClass = 'green'; hadir++; break;
+                                case 'SAKIT': cellContent = 'S'; cellClass = 'blue'; sakit++; break;
+                                case 'IZIN': cellContent = 'I'; cellClass = 'yellow'; izin++; break;
+                                case 'ALPA': cellContent = 'A'; cellClass = 'red'; alpa++; break;
+                                default: cellContent = '-'; cellClass = 'gray';
+                            }
+                        }
+                        
+                        htmlContent += `<td class="${cellClass}">${cellContent}</td>`;
+                    }
+                    
+                    // Add summary columns
+                    htmlContent += `<td class="summary green">${hadir}</td><td class="summary blue">${sakit}</td><td class="summary yellow">${izin}</td><td class="summary red">${alpa}</td></tr>`;
+                });
+                
+                htmlContent += `</tbody></table>`;
+            }
+            
+            htmlContent += `
+                    <p><strong>Keterangan:</strong> H=Hadir, S=Sakit, I=Izin, A=Alpa, M=Minggu, L=Libur</p>
+                </body>
+                </html>
+            `;
+            
+            // Download HTML file
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            closeDownloadHistoryModal();
+        }
+
+        function downloadRekapExcel() {
+            const monthValue = document.getElementById('downloadRekapMonth').value;
+            const year = parseInt(document.getElementById('downloadRekapYear').value);
+            const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+            
+            let csvContent = '';
+            let filename = '';
+            
+            if (monthValue === 'all') {
+                // Get all months that have attendance data
+                const monthsWithData = new Set();
+                Object.keys(attendance).forEach(dateKey => {
+                    const [yearStr, monthStr] = dateKey.split('-');
+                    if (parseInt(yearStr) === year) {
+                        monthsWithData.add(parseInt(monthStr) - 1);
+                    }
+                });
+                
+                const sortedMonths = Array.from(monthsWithData).sort((a, b) => a - b);
+                
+                if (sortedMonths.length === 0) {
+                    alert('TIDAK ADA DATA ABSENSI UNTUK TAHUN INI');
+                    return;
+                }
+                
+                csvContent = `REKAP ABSENSI SEMUA DATA ${year}\n\n`;
+                filename = `Rekap_Absensi_Semua_Data_${year}.csv`;
+                
+                // Process each month with data
+                sortedMonths.forEach((month, monthIndex) => {
+                    if (monthIndex > 0) csvContent += '\n\n';
+                    csvContent += `${monthNames[month]} ${year}\n`;
+                    csvContent += 'NO,NAMA SISWA,HADIR,SAKIT,IZIN,ALPA\n';
+                    
+                    students.forEach((student, index) => {
+                        let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                        
+                        const daysInMonth = new Date(year, month + 1, 0).getDate();
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const date = new Date(year, month, day);
+                            
+                            if (date.getDay() === 0 || holidays[dateKey]) continue;
+                            
+                            const studentAttendance = attendance[dateKey]?.[student.id];
+                            
+                            switch (studentAttendance) {
+                                case 'HADIR': hadir++; break;
+                                case 'SAKIT': sakit++; break;
+                                case 'IZIN': izin++; break;
+                                case 'ALPA': alpa++; break;
+                            }
+                        }
+                        
+                        csvContent += `${index + 1},"${student.name}",${hadir},${sakit},${izin},${alpa}\n`;
+                    });
+                });
+                
+            } else {
+                // Single month download
+                const month = parseInt(monthValue);
+                
+                csvContent = `REKAP ABSENSI ${monthNames[month]} ${year}\n\n`;
+                filename = `Rekap_Absensi_${monthNames[month]}_${year}.csv`;
+                csvContent += 'NO,NAMA SISWA,HADIR,SAKIT,IZIN,ALPA\n';
+                
+                students.forEach((student, index) => {
+                    let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                    
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const date = new Date(year, month, day);
+                        
+                        if (date.getDay() === 0 || holidays[dateKey]) continue;
+                        
+                        const studentAttendance = attendance[dateKey]?.[student.id];
+                        
+                        switch (studentAttendance) {
+                            case 'HADIR': hadir++; break;
+                            case 'SAKIT': sakit++; break;
+                            case 'IZIN': izin++; break;
+                            case 'ALPA': alpa++; break;
+                        }
+                    }
+                    
+                    csvContent += `${index + 1},"${student.name}",${hadir},${sakit},${izin},${alpa}\n`;
+                });
+            }
+            
+            // Download CSV file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            closeDownloadRekapModal();
+        }
+
+        function downloadRekapPDF() {
+            const monthValue = document.getElementById('downloadRekapMonth').value;
+            const year = parseInt(document.getElementById('downloadRekapYear').value);
+            const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+            
+            // Load jsPDF library
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            script.onload = function() {
+                const { jsPDF } = window.jspdf;
+                // Use landscape orientation
+                const doc = new jsPDF('landscape');
+                
+                let filename = '';
+                let yPosition = 20;
+                
+                // Set font
+                doc.setFont('helvetica');
+                
+                if (monthValue === 'all') {
+                    // Get all months that have attendance data
+                    const monthsWithData = new Set();
+                    Object.keys(attendance).forEach(dateKey => {
+                        const [yearStr, monthStr] = dateKey.split('-');
+                        if (parseInt(yearStr) === year) {
+                            monthsWithData.add(parseInt(monthStr) - 1);
+                        }
+                    });
+                    
+                    const sortedMonths = Array.from(monthsWithData).sort((a, b) => a - b);
+                    
+                    if (sortedMonths.length === 0) {
+                        alert('TIDAK ADA DATA ABSENSI UNTUK TAHUN INI');
+                        return;
+                    }
+                    
+                    filename = `Rekap_Absensi_Semua_Data_${year}.pdf`;
+                    
+                    // Title
+                    doc.setFontSize(16);
+                    doc.text(`REKAP ABSENSI SEMUA DATA ${year}`, 148, yPosition, { align: 'center' });
+                    yPosition += 20;
+                    
+                    // Process each month with data
+                    sortedMonths.forEach((month, monthIndex) => {
+                        if (monthIndex > 0) {
+                            doc.addPage('landscape');
+                            yPosition = 20;
+                        }
+                        
+                        // Month title
+                        doc.setFontSize(12);
+                        doc.text(`${monthNames[month]} ${year}`, 20, yPosition);
+                        yPosition += 15;
+                        
+                        // Create table data with colors
+                        const tableData = [];
+                        const headers = ['NO', 'NAMA SISWA', 'HADIR', 'SAKIT', 'IZIN', 'ALPA'];
+                        tableData.push(headers);
+                        
+                        // Add student data
+                        students.forEach((student, index) => {
+                            let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                            
+                            const daysInMonth = new Date(year, month + 1, 0).getDate();
+                            
+                            for (let day = 1; day <= daysInMonth; day++) {
+                                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                const date = new Date(year, month, day);
+                                
+                                if (date.getDay() === 0 || holidays[dateKey]) continue;
+                                
+                                const studentAttendance = attendance[dateKey]?.[student.id];
+                                
+                                switch (studentAttendance) {
+                                    case 'HADIR': hadir++; break;
+                                    case 'SAKIT': sakit++; break;
+                                    case 'IZIN': izin++; break;
+                                    case 'ALPA': alpa++; break;
+                                }
+                            }
+                            
+                            const row = [index + 1, student.name, hadir, sakit, izin, alpa];
+                            tableData.push(row);
+                        });
+                        
+                        // Draw table with colors
+                        drawColoredRekapTable(doc, tableData, 20, yPosition);
+                    });
+                    
+                } else {
+                    // Single month download
+                    const month = parseInt(monthValue);
+                    
+                    filename = `Rekap_Absensi_${monthNames[month]}_${year}.pdf`;
+                    
+                    // Title
+                    doc.setFontSize(16);
+                    doc.text(`REKAP ABSENSI ${monthNames[month]} ${year}`, 148, yPosition, { align: 'center' });
+                    yPosition += 20;
+                    
+                    // Create table data with colors
+                    const tableData = [];
+                    const headers = ['NO', 'NAMA SISWA', 'HADIR', 'SAKIT', 'IZIN', 'ALPA'];
+                    tableData.push(headers);
+                    
+                    // Add student data
+                    students.forEach((student, index) => {
+                        let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                        
+                        const daysInMonth = new Date(year, month + 1, 0).getDate();
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const date = new Date(year, month, day);
+                            
+                            if (date.getDay() === 0 || holidays[dateKey]) continue;
+                            
+                            const studentAttendance = attendance[dateKey]?.[student.id];
+                            
+                            switch (studentAttendance) {
+                                case 'HADIR': hadir++; break;
+                                case 'SAKIT': sakit++; break;
+                                case 'IZIN': izin++; break;
+                                case 'ALPA': alpa++; break;
+                            }
+                        }
+                        
+                        const row = [index + 1, student.name, hadir, sakit, izin, alpa];
+                        tableData.push(row);
+                    });
+                    
+                    // Draw table with colors
+                    drawColoredRekapTable(doc, tableData, 20, yPosition);
+                }
+                
+                // Save PDF
+                doc.save(filename);
+                closeDownloadRekapModal();
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        // Helper function to draw colored rekap table in PDF
+        function drawColoredRekapTable(doc, data, x, y) {
+            const pageWidth = 297; // A4 landscape width in mm
+            const columnWidths = [15, 150, 28, 28, 28, 28]; // NO, NAMA, HADIR, SAKIT, IZIN, ALPA
+            const totalTableWidth = columnWidths.reduce((sum, width) => sum + width, 0); // Total: 277
+            
+            // Center the table horizontally
+            const centeredX = (pageWidth - totalTableWidth) / 2;
+            
+            const cellHeight = 8;
+            
+            // Color mapping for rekap
+            const colorMap = {
+                'header': [240, 240, 240],
+                'hadir': [220, 252, 231],     // Light green
+                'sakit': [219, 234, 254],     // Light blue
+                'izin': [254, 249, 195],      // Light yellow
+                'alpa': [254, 226, 226]       // Light red
+            };
+            
+            data.forEach((row, rowIndex) => {
+                let currentX = centeredX;
+                
+                row.forEach((cell, colIndex) => {
+                    const currentWidth = columnWidths[colIndex];
+                    const currentY = y + rowIndex * cellHeight;
+                    
+                    // Set cell background color
+                    if (rowIndex === 0) {
+                        // Header background
+                        doc.setFillColor(240, 240, 240);
+                        doc.rect(currentX, currentY, currentWidth, cellHeight, 'F');
+                    } else if (colIndex >= 2) {
+                        // Data columns with colors
+                        let color = [255, 255, 255]; // Default white
+                        switch (colIndex) {
+                            case 2: color = colorMap.hadir; break;  // HADIR
+                            case 3: color = colorMap.sakit; break;  // SAKIT
+                            case 4: color = colorMap.izin; break;   // IZIN
+                            case 5: color = colorMap.alpa; break;   // ALPA
+                        }
+                        doc.setFillColor(color[0], color[1], color[2]);
+                        doc.rect(currentX, currentY, currentWidth, cellHeight, 'F');
+                    }
+                    
+                    // Draw cell border
+                    doc.setDrawColor(0, 0, 0);
+                    doc.rect(currentX, currentY, currentWidth, cellHeight);
+                    
+                    // Add text
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFontSize(7);
+                    if (rowIndex === 0) {
+                        doc.setFont('helvetica', 'bold');
+                    } else {
+                        doc.setFont('helvetica', 'normal');
+                    }
+                    
+                    const text = cell.toString();
+                    const textY = currentY + cellHeight / 2 + 2.5;
+                    
+                    if (colIndex === 1) {
+                        // Left align name column and truncate if too long
+                        let displayText = text;
+                        if (text.length > 25) {
+                            displayText = text.substring(0, 23) + '..';
+                        }
+                        doc.text(displayText, currentX + 2, textY);
+                    } else {
+                        // Center align other columns
+                        const textX = currentX + currentWidth / 2;
+                        doc.text(text, textX, textY, { align: 'center' });
+                    }
+                    
+                    currentX += currentWidth;
+                });
+            });
+        }
+
+        function downloadRekapHTML() {
+            const monthValue = document.getElementById('downloadRekapMonth').value;
+            const year = parseInt(document.getElementById('downloadRekapYear').value);
+            const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+            
+            let htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Rekap Absensi ${monthValue === 'all' ? 'Semua Data' : monthNames[parseInt(monthValue)]} ${year}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .center { text-align: center; }
+                        .month-title { font-size: 18px; font-weight: bold; margin: 20px 0 10px 0; }
+                    </style>
+                </head>
+                <body>
+            `;
+            
+            let filename = '';
+            
+            if (monthValue === 'all') {
+                // Get all months that have attendance data
+                const monthsWithData = new Set();
+                Object.keys(attendance).forEach(dateKey => {
+                    const [yearStr, monthStr] = dateKey.split('-');
+                    if (parseInt(yearStr) === year) {
+                        monthsWithData.add(parseInt(monthStr) - 1);
+                    }
+                });
+                
+                const sortedMonths = Array.from(monthsWithData).sort((a, b) => a - b);
+                
+                if (sortedMonths.length === 0) {
+                    alert('TIDAK ADA DATA ABSENSI UNTUK TAHUN INI');
+                    return;
+                }
+                
+                htmlContent += `<h1>REKAP ABSENSI SEMUA DATA ${year}</h1>`;
+                filename = `Rekap_Absensi_Semua_Data_${year}.html`;
+                
+                // Process each month with data
+                sortedMonths.forEach((month, monthIndex) => {
+                    htmlContent += `<div class="month-title">${monthNames[month]} ${year}</div>`;
+                    htmlContent += `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>NO</th>
+                                    <th>NAMA SISWA</th>
+                                    <th class="center">HADIR</th>
+                                    <th class="center">SAKIT</th>
+                                    <th class="center">IZIN</th>
+                                    <th class="center">ALPA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    students.forEach((student, index) => {
+                        let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                        
+                        const daysInMonth = new Date(year, month + 1, 0).getDate();
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const date = new Date(year, month, day);
+                            
+                            if (date.getDay() === 0 || holidays[dateKey]) continue;
+                            
+                            const studentAttendance = attendance[dateKey]?.[student.id];
+                            
+                            switch (studentAttendance) {
+                                case 'HADIR': hadir++; break;
+                                case 'SAKIT': sakit++; break;
+                                case 'IZIN': izin++; break;
+                                case 'ALPA': alpa++; break;
+                            }
+                        }
+                        
+                        htmlContent += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${student.name}</td>
+                                <td class="center">${hadir}</td>
+                                <td class="center">${sakit}</td>
+                                <td class="center">${izin}</td>
+                                <td class="center">${alpa}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    htmlContent += `</tbody></table>`;
+                });
+                
+            } else {
+                // Single month download
+                const month = parseInt(monthValue);
+                
+                htmlContent += `<h1>REKAP ABSENSI ${monthNames[month]} ${year}</h1>`;
+                filename = `Rekap_Absensi_${monthNames[month]}_${year}.html`;
+                
+                htmlContent += `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>NO</th>
+                                <th>NAMA SISWA</th>
+                                <th class="center">HADIR</th>
+                                <th class="center">SAKIT</th>
+                                <th class="center">IZIN</th>
+                                <th class="center">ALPA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                students.forEach((student, index) => {
+                    let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                    
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const date = new Date(year, month, day);
+                        
+                        if (date.getDay() === 0 || holidays[dateKey]) continue;
+                        
+                        const studentAttendance = attendance[dateKey]?.[student.id];
+                        
+                        switch (studentAttendance) {
+                            case 'HADIR': hadir++; break;
+                            case 'SAKIT': sakit++; break;
+                            case 'IZIN': izin++; break;
+                            case 'ALPA': alpa++; break;
+                        }
+                    }
+                    
+                    htmlContent += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${student.name}</td>
+                            <td class="center">${hadir}</td>
+                            <td class="center">${sakit}</td>
+                            <td class="center">${izin}</td>
+                            <td class="center">${alpa}</td>
+                        </tr>
+                    `;
+                });
+                
+                htmlContent += `</tbody></table>`;
+            }
+            
+            htmlContent += `
+                </body>
+                </html>
+            `;
+            
+            // Download HTML file
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            closeDownloadRekapModal();
+        }
+
+        function sendWhatsApp() {
+            const monthValue = document.getElementById('sendMonth').value;
+            const year = parseInt(document.getElementById('sendYear').value);
+            const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+            
+            const schoolName = document.getElementById('schoolName').value || '[ISI NAMA SEKOLAH]';
+            const className = document.getElementById('className').value || '[ISI KELAS]';
+            const teacherName = document.getElementById('teacherName').value || '[ISI NAMA WALI KELAS]';
+            
+            let reportText = '';
+            
+            if (monthValue === 'all') {
+                // Check if there's any attendance data for the year
+                const hasDataForYear = Object.keys(attendance).some(dateKey => {
+                    const [yearStr] = dateKey.split('-');
+                    return parseInt(yearStr) === year;
+                });
+                
+                if (!hasDataForYear) {
+                    alert('TIDAK ADA DATA ABSENSI UNTUK TAHUN INI');
+                    return;
+                }
+                
+                reportText = `LAPORAN REKAP SEMUA DATA ${year}\n\n`;
+                reportText += `NAMA SEKOLAH : ${schoolName}\n`;
+                reportText += `KELAS : ${className}\n`;
+                reportText += `WALI KELAS : ${teacherName}\n`;
+                reportText += `_________________________________\n\n`;
+                reportText += `=== SEMUA BULAN ===\n\n`;
+                
+                if (students.length === 0) {
+                    reportText += 'BELUM ADA DATA SISWA';
+                } else {
+                    // Calculate total attendance for each student across all months
+                    students.forEach((student, index) => {
+                        let totalHadir = 0, totalSakit = 0, totalIzin = 0, totalAlpa = 0;
+                        
+                        // Loop through all attendance records for the year
+                        Object.keys(attendance).forEach(dateKey => {
+                            const [yearStr, monthStr, dayStr] = dateKey.split('-');
+                            if (parseInt(yearStr) === year) {
+                                const date = new Date(parseInt(yearStr), parseInt(monthStr) - 1, parseInt(dayStr));
+                                
+                                // Skip Sundays and holidays
+                                if (date.getDay() === 0 || holidays[dateKey]) return;
+                                
+                                const studentAttendance = attendance[dateKey]?.[student.id];
+                                
+                                switch (studentAttendance) {
+                                    case 'HADIR': totalHadir++; break;
+                                    case 'SAKIT': totalSakit++; break;
+                                    case 'IZIN': totalIzin++; break;
+                                    case 'ALPA': totalAlpa++; break;
+                                }
+                            }
+                        });
+                        
+                        reportText += `${index + 1}. ${student.name}\n`;
+                        reportText += `   HADIR : ${totalHadir}\n`;
+                        reportText += `   SAKIT : ${totalSakit}\n`;
+                        reportText += `   IZIN : ${totalIzin}\n`;
+                        reportText += `   ALPA : ${totalAlpa}\n\n`;
+                    });
+                }
+            } else {
+                // Single month report
+                const month = parseInt(monthValue);
+                
+                reportText = `LAPORAN REKAP BULAN ${monthNames[month]} ${year}\n\n`;
+                reportText += `NAMA SEKOLAH : ${schoolName}\n`;
+                reportText += `KELAS : ${className}\n`;
+                reportText += `WALI KELAS : ${teacherName}\n`;
+                reportText += `_________________________________\n\n`;
+                
+                if (students.length === 0) {
+                    reportText += 'BELUM ADA DATA SISWA';
+                } else {
+                    students.forEach((student, index) => {
+                        let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                        
+                        const daysInMonth = new Date(year, month + 1, 0).getDate();
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const date = new Date(year, month, day);
+                            
+                            if (date.getDay() === 0 || holidays[dateKey]) continue;
+                            
+                            const studentAttendance = attendance[dateKey]?.[student.id];
+                            
+                            switch (studentAttendance) {
+                                case 'HADIR': hadir++; break;
+                                case 'SAKIT': sakit++; break;
+                                case 'IZIN': izin++; break;
+                                case 'ALPA': alpa++; break;
+                            }
+                        }
+                        
+                        reportText += `${index + 1}. ${student.name}\n`;
+                        reportText += `   HADIR : ${hadir}\n`;
+                        reportText += `   SAKIT : ${sakit}\n`;
+                        reportText += `   IZIN : ${izin}\n`;
+                        reportText += `   ALPA : ${alpa}\n\n`;
+                    });
+                }
+            }
+            
+            const message = encodeURIComponent(reportText);
+            const whatsappUrl = `https://wa.me/?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function sendEmail() {
+            const monthValue = document.getElementById('sendMonth').value;
+            const year = parseInt(document.getElementById('sendYear').value);
+            const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+            
+            const schoolName = document.getElementById('schoolName').value || '[ISI NAMA SEKOLAH]';
+            const className = document.getElementById('className').value || '[ISI KELAS]';
+            const teacherName = document.getElementById('teacherName').value || '[ISI NAMA WALI KELAS]';
+            
+            let reportText = '';
+            let subject = '';
+            
+            if (monthValue === 'all') {
+                // Check if there's any attendance data for the year
+                const hasDataForYear = Object.keys(attendance).some(dateKey => {
+                    const [yearStr] = dateKey.split('-');
+                    return parseInt(yearStr) === year;
+                });
+                
+                if (!hasDataForYear) {
+                    alert('TIDAK ADA DATA ABSENSI UNTUK TAHUN INI');
+                    return;
+                }
+                
+                subject = `Laporan Rekap Absensi Semua Data ${year}`;
+                reportText = `LAPORAN REKAP SEMUA DATA ${year}\n\n`;
+                reportText += `NAMA SEKOLAH : ${schoolName}\n`;
+                reportText += `KELAS : ${className}\n`;
+                reportText += `WALI KELAS : ${teacherName}\n`;
+                reportText += `_________________________________\n\n`;
+                reportText += `=== SEMUA BULAN ===\n\n`;
+                
+                if (students.length === 0) {
+                    reportText += 'BELUM ADA DATA SISWA';
+                } else {
+                    // Calculate total attendance for each student across all months
+                    students.forEach((student, index) => {
+                        let totalHadir = 0, totalSakit = 0, totalIzin = 0, totalAlpa = 0;
+                        
+                        // Loop through all attendance records for the year
+                        Object.keys(attendance).forEach(dateKey => {
+                            const [yearStr, monthStr, dayStr] = dateKey.split('-');
+                            if (parseInt(yearStr) === year) {
+                                const date = new Date(parseInt(yearStr), parseInt(monthStr) - 1, parseInt(dayStr));
+                                
+                                // Skip Sundays and holidays
+                                if (date.getDay() === 0 || holidays[dateKey]) return;
+                                
+                                const studentAttendance = attendance[dateKey]?.[student.id];
+                                
+                                switch (studentAttendance) {
+                                    case 'HADIR': totalHadir++; break;
+                                    case 'SAKIT': totalSakit++; break;
+                                    case 'IZIN': totalIzin++; break;
+                                    case 'ALPA': totalAlpa++; break;
+                                }
+                            }
+                        });
+                        
+                        reportText += `${index + 1}. ${student.name}\n`;
+                        reportText += `   HADIR : ${totalHadir}\n`;
+                        reportText += `   SAKIT : ${totalSakit}\n`;
+                        reportText += `   IZIN : ${totalIzin}\n`;
+                        reportText += `   ALPA : ${totalAlpa}\n\n`;
+                    });
+                }
+            } else {
+                // Single month report
+                const month = parseInt(monthValue);
+                
+                subject = `Laporan Rekap Absensi ${monthNames[month]} ${year}`;
+                reportText = `LAPORAN REKAP BULAN ${monthNames[month]} ${year}\n\n`;
+                reportText += `NAMA SEKOLAH : ${schoolName}\n`;
+                reportText += `KELAS : ${className}\n`;
+                reportText += `WALI KELAS : ${teacherName}\n`;
+                reportText += `_________________________________\n\n`;
+                
+                if (students.length === 0) {
+                    reportText += 'BELUM ADA DATA SISWA';
+                } else {
+                    students.forEach((student, index) => {
+                        let hadir = 0, sakit = 0, izin = 0, alpa = 0;
+                        
+                        const daysInMonth = new Date(year, month + 1, 0).getDate();
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const date = new Date(year, month, day);
+                            
+                            if (date.getDay() === 0 || holidays[dateKey]) continue;
+                            
+                            const studentAttendance = attendance[dateKey]?.[student.id];
+                            
+                            switch (studentAttendance) {
+                                case 'HADIR': hadir++; break;
+                                case 'SAKIT': sakit++; break;
+                                case 'IZIN': izin++; break;
+                                case 'ALPA': alpa++; break;
+                            }
+                        }
+                        
+                        reportText += `${index + 1}. ${student.name}\n`;
+                        reportText += `   HADIR : ${hadir}\n`;
+                        reportText += `   SAKIT : ${sakit}\n`;
+                        reportText += `   IZIN : ${izin}\n`;
+                        reportText += `   ALPA : ${alpa}\n\n`;
+                    });
+                }
+            }
+            
+            const encodedSubject = encodeURIComponent(subject);
+            const body = encodeURIComponent(reportText);
+            const emailUrl = `mailto:?subject=${encodedSubject}&body=${body}`;
+            window.open(emailUrl, '_blank');
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97c345dbd47d9c74',t:'MTc1NzM4NTEyMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
